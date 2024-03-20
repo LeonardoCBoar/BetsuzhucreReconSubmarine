@@ -1,5 +1,7 @@
 #include <VirtualWire.h>
 
+#include "../common/messages.hpp"
+
  
 byte message[VW_MAX_MESSAGE_LEN];
 byte msgLength = VW_MAX_MESSAGE_LEN;
@@ -37,5 +39,20 @@ void loop()
 			  Serial.write(message[i]);
 		}
 		Serial.println();
+
+		ControlMessage received_command = ControlMessage(message[0]);
+
+		if(received_command.get_command(ControlMessage::FORWARD))
+			Serial.printLn("FORWARD");
+		if(received_command.get_command(ControlMessage::BACKWARD))
+			Serial.printLn("BACKWARD");
+		if(received_command.get_command(ControlMessage::LEFT))
+			Serial.printLn("LEFT");
+		if(received_command.get_command(ControlMessage::RIGHT))
+			Serial.printLn("RIGHT");
+		if(received_command.get_command(ControlMessage::DOWN))
+			Serial.printLn("DOWN")
+		if(received_command.get_command(ControlMessage::UP))
+			Serial.printLn("UP");
 	}
 }
