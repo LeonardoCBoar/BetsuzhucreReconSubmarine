@@ -48,7 +48,7 @@ public:
         this->speed = new_speed;
     }
 
-    void set_enabled(const int enabled)
+    void set_enabled(const bool enabled)
     {
         this->enabled = enabled;
         this->update_pins();
