@@ -2,8 +2,6 @@
 #include <stdio.h>
 
 
-
-
 struct Message
 {
 
