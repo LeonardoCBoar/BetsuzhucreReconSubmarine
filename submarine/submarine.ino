@@ -1,32 +1,35 @@
-#include <VirtualWire.h>
+#include <RH_ASK.h>
+#include <SPI.h> 
 
-#include "../common/messages.hpp"
+#include "messages.hpp"
+#include "motor_controller.hpp"
 
  
-byte message[VW_MAX_MESSAGE_LEN];
-byte msgLength = VW_MAX_MESSAGE_LEN;
+const int MESSAGE_BUFFER_SIZE = 40;
 
-const int RECEIVER_PIN = 7;
-const int LED = 6;
+const int RX_PIN = 7;
+const int LED = 13;
 
 int count = 0;
+RH_ASK driver{2000, RX_PIN, 0};
  
  
 void setup()   {
 	Serial.begin(9600);
 	pinMode(LED, OUTPUT);
 
-	vw_set_rx_pin(RECEIVER_PIN);
-	vw_setup(2000);
-	vw_rx_start();
+	if(!driver.init())
+	{
+		Serial.println("RF failed");
+	}
 }
  
 void loop()
 {
-	uint8_t message[VW_MAX_MESSAGE_LEN];    
-	uint8_t msgLength = VW_MAX_MESSAGE_LEN; 
+	uint8_t message[MESSAGE_BUFFER_SIZE];    
+	uint8_t msgLength;
  
-	if (vw_get_message(message, &msgLength))
+	if (driver.recv(message, &msgLength))
 	{
 		digitalWrite(LED, HIGH);
 		delay(100);
@@ -34,25 +37,21 @@ void loop()
 
 		count++;
 		Serial.print((String)count + " - Recebido: " );
-		for (int i = 0; i < msgLength; i++)
-		{
-			  Serial.write(message[i]);
-		}
-		Serial.println();
 
 		ControlMessage received_command = ControlMessage(message[0]);
+    	received_command.print_binary();
 
 		if(received_command.get_command(ControlMessage::FORWARD))
-			Serial.printLn("FORWARD");
+			Serial.println("RX: FORWARD");
 		if(received_command.get_command(ControlMessage::BACKWARD))
-			Serial.printLn("BACKWARD");
+			Serial.println("RX: BACKWARD");
 		if(received_command.get_command(ControlMessage::LEFT))
-			Serial.printLn("LEFT");
+			Serial.println("RX: LEFT");
 		if(received_command.get_command(ControlMessage::RIGHT))
-			Serial.printLn("RIGHT");
+			Serial.println("RX: RIGHT");
 		if(received_command.get_command(ControlMessage::DOWN))
-			Serial.printLn("DOWN")
+			Serial.println("RX: DOWN");
 		if(received_command.get_command(ControlMessage::UP))
-			Serial.printLn("UP");
+			Serial.println("RX: UP");
 	}
 }
