@@ -72,14 +72,13 @@ void loop() {
 
   control_message.print_binary();
   send(control_message.data, 1);
-  delay(1500);
+  delay(100);
 
 }
 
 void send (uint8_t* message, const size_t size)
 {
-  char abc = 123;
-  const uint8_t aproved = driver.send((uint8_t)&abc, 1);
+  const uint8_t aproved = driver.send(message, 1);
   i+=1;
   Serial.print(i);
   Serial.print(" - Approved: ");
