@@ -19,8 +19,10 @@ const int DEPTH_ENCODER_B_PIN = 19;
 
 const int DEPTH_ENCODER_LIMIT = 15;
 
-int count = 0;
 RH_ASK driver{2000, RX_PIN, 0};
+uint8_t message[MESSAGE_BUFFER_SIZE];    
+uint8_t msg_len;
+unsigned int msg_count = 0;
 
 int target_depth_encoder_position = 0;
 volatile int current_depth_encoder_position = 0;
@@ -44,6 +46,13 @@ void setup()   {
    attachInterrupt(digitalPinToInterrupt(DEPTH_ENCODER_A_PIN), on_depth_encoder_interrupt, RISING);
 }
 
+void loop()
+{
+  handle_rf_recv();
+  handle_motors();
+}
+
+
 void on_depth_encoder_interrupt()
 {
   const int b_input = digitalRead(DEPTH_ENCODER_B_PIN);
@@ -57,22 +66,18 @@ void on_depth_encoder_interrupt()
   }
   
 }
- 
-void loop()
+
+void handle_rf_recv()
 {
-  Serial.print("Encoder position:" );
-  Serial.println(current_depth_encoder_position);
-	uint8_t message[MESSAGE_BUFFER_SIZE];    
-	uint8_t msgLength;
- 
-	if (driver.recv(message, &msgLength))
+
+	if (driver.recv(message, &msg_len))
 	{
 		digitalWrite(LED, HIGH);
 		delay(100);
 		digitalWrite(LED, LOW);
 
-		count++;
-		Serial.print((String)count + " - Recebido: " );
+		msg_count++;
+		Serial.print((String)msg_count + " - Recebido: " );
 
 		ControlMessage received_command = ControlMessage(message[0]);
     	received_command.print_binary();
@@ -102,6 +107,13 @@ void loop()
 		if(received_command.get_command(ControlMessage::UP))
 			Serial.println("RX: UP");
 	}
+
+}
+
+void handle_motors()
+{
+  Serial.print("Encoder position:" );
+  Serial.println(current_depth_encoder_position);
 
   int depth_position;
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
