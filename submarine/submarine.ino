@@ -11,13 +11,16 @@ const int MESSAGE_BUFFER_SIZE = 40;
 const int RX_PIN = 7;
 const int LED = 13;
 
-const int FORWARD_PIN = 2;
-const int BACKWARD_PIN = 3;
+const int FORWARD_PIN = 3;
+const int BACKWARD_PIN = 2;
 const int SPEED_PIN = 4;
 const int DEPTH_ENCODER_A_PIN = 18;
 const int DEPTH_ENCODER_B_PIN = 19;
 
 const int DEPTH_ENCODER_LIMIT = 15;
+const int DEPTH_MOTOR_SPEED = 200;
+
+MotorController depth_motor_controller{FORWARD_PIN, BACKWARD_PIN, DEPTH_MOTOR_SPEED};
 
 RH_ASK driver{2000, RX_PIN, 0};
 uint8_t message[MESSAGE_BUFFER_SIZE];    
@@ -37,12 +40,6 @@ void setup()   {
 		Serial.println("RF failed");
 	}
 
-   pinMode(FORWARD_PIN, OUTPUT);
-   pinMode(BACKWARD_PIN, OUTPUT);
-   pinMode(SPEED_PIN, OUTPUT);
-
-   pinMode(DEPTH_ENCODER_A_PIN, INPUT);
-   pinMode(DEPTH_ENCODER_B_PIN, INPUT);
    attachInterrupt(digitalPinToInterrupt(DEPTH_ENCODER_A_PIN), on_depth_encoder_interrupt, RISING);
 }
 
@@ -123,18 +120,17 @@ void handle_motors()
   if(target_depth_encoder_position > depth_position)
   {
     Serial.println("Moving encoder forward");
-    digitalWrite(FORWARD_PIN, LOW);
-    digitalWrite(BACKWARD_PIN, HIGH);
+    depth_motor_controller.set_reversed(false);
+    depth_motor_controller.set_enabled(true);
   }
   else if(target_depth_encoder_position < depth_position)
   {
     Serial.println("Moving encoder backward");
-    digitalWrite(FORWARD_PIN, HIGH);
-    digitalWrite(BACKWARD_PIN, LOW);
+    depth_motor_controller.set_reversed(true);
+    depth_motor_controller.set_enabled(true);
   }
   else
   {
-    digitalWrite(FORWARD_PIN, LOW);
-    digitalWrite(BACKWARD_PIN, LOW);
+    depth_motor_controller.set_enabled(false);
   }
 }
