@@ -6,9 +6,10 @@
 #include "motor_controller.hpp"
 
  
-const int MESSAGE_BUFFER_SIZE = 40;
+const int MESSAGE_BUFFER_SIZE = 60;
 
 const int RX_PIN = 7;
+const int TX_PIN = 8;
 const int LED = 13;
 
 const int FORWARD_PIN = 3;
@@ -22,7 +23,7 @@ const int DEPTH_MOTOR_SPEED = 200;
 
 MotorController depth_motor_controller{FORWARD_PIN, BACKWARD_PIN, DEPTH_MOTOR_SPEED};
 
-RH_ASK driver{2000, RX_PIN, 0};
+RH_ASK driver{2000, RX_PIN, TX_PIN};
 uint8_t message[MESSAGE_BUFFER_SIZE];    
 uint8_t msg_len;
 unsigned int msg_count = 0;
@@ -46,6 +47,7 @@ void setup()   {
 void loop()
 {
   handle_rf_recv();
+  handle_image_rf_tx();
   handle_motors();
 }
 
@@ -105,6 +107,21 @@ void handle_rf_recv()
 			Serial.println("RX: UP");
 	}
 
+}
+
+void handle_image_rf_tx()
+{
+  // Random image
+  uint8_t image[MESSAGE_BUFFER_SIZE];
+  for(int i = 0; i < MESSAGE_BUFFER_SIZE; i++)
+  {
+    image[i] = random(0,255);
+  }
+
+  const int image_sent = driver.send(image, MESSAGE_BUFFER_SIZE);
+  Serial.println(MESSAGE_BUFFER_SIZE);
+  Serial.print("Image sent: ");
+  Serial.println(image_sent);
 }
 
 void handle_motors()

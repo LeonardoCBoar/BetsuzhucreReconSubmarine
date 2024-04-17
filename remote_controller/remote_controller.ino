@@ -1,21 +1,34 @@
 #include <RH_ASK.h>
 #include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 32 // OLED display height, in pixels
 
 #include "messages.hpp"
 
 
-const int TEST_BUTTON_PIN = 13;
-const int JOYSTICK_5V_PIN = 2;
-const int TX_PIN = 8;
+#define TEST_BUTTON_PIN 13
+#define JOYSTICK_5V_PIN  2
+#define RX_PIN  7
+#define TX_PIN  8
 
-const int ANALOG_X_PIN = A0;
-const int ANALOG_Y_PIN = A1;
-const int ANALOG_LOW_THRESOLD = 128;
-const int ANALOG_HIGH_THRESOLD = 895;
+#define ANALOG_X_PIN A0
+#define ANALOG_Y_PIN  A1
+#define ANALOG_LOW_THRESOLD  128
+#define ANALOG_HIGH_THRESOLD  895
 
-RH_ASK driver{2000, 0, TX_PIN};
+#define RF_BUFFER_SIZE 60
 
-int i = 0;
+RH_ASK driver{2000, RX_PIN, TX_PIN};
+//RH_ASK rx_driver{2000, RX_PIN, 0};
+
+int tx_count = 0;
+
+#define OLED_RESET -1
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 void setup() {
   Serial.begin(9600);
@@ -26,6 +39,17 @@ void setup() {
   {
     Serial.println("RF failed");
   }
+
+  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { 
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;); // Don't proceed, loop forever
+  }
+
+  display.display();
+  delay(2000);
+
+  display.clearDisplay();
 
 }
 
@@ -43,10 +67,10 @@ void loop() {
   const int analog_read_x = analogRead(ANALOG_X_PIN);
   const int analog_read_y = analogRead(ANALOG_Y_PIN);
 
-  Serial.print("Y: ");
-  Serial.println(analog_read_y);
-  Serial.print("X: ");
-  Serial.println(analog_read_x);
+  //Serial.print("Y: ");
+  //Serial.println(analog_read_y);
+  //Serial.print("X: ");
+  //Serial.println(analog_read_x);
   if(analog_read_x < ANALOG_LOW_THRESOLD)
   {
     Serial.println("FORWARD");
@@ -70,17 +94,43 @@ void loop() {
   }
 
 
-  control_message.print_binary();
+  //control_message.print_binary();
+  handle_rf_rx();
   send(control_message.data, 1);
   delay(100);
+
+}
+
+void handle_rf_rx()
+{
+  uint8_t message[RF_BUFFER_SIZE];
+  uint8_t message_size;
+	if (driver.recv(message, &message_size))
+	{
+    display.clearDisplay();
+    for(int byte = 0; byte < message_size; byte++)
+    {
+      for(int8_t bit = 7; bit >= 0; bit--)
+      {
+        uint8_t pixel_value = (message[byte] & ( 1 << bit)) != 0;
+        uint8_t pixel_x = (byte * 8 + bit) % SCREEN_WIDTH;
+        uint8_t pixel_y = (byte * 8 + bit) / SCREEN_WIDTH;
+        display.drawPixel(pixel_x, pixel_y, pixel_value);
+        Serial.print(pixel_value);
+      }
+      Serial.print(",");
+    }
+    display.display();
+    Serial.println("");
+  }
 
 }
 
 void send (uint8_t* message, const size_t size)
 {
   const uint8_t aproved = driver.send(message, 1);
-  i+=1;
-  Serial.print(i);
-  Serial.print(" - Approved: ");
-  Serial.println(aproved);
+  tx_count += 1;
+  // Serial.print(tx_count);
+  // Serial.print(" - Approved: ");
+  // Serial.println(aproved);
 }
