@@ -11,13 +11,13 @@ const int MESSAGE_BUFFER_SIZE = 40;
 const int RX_PIN = 7;
 const int LED = 13;
 
-const int FORWARD_PIN = 2;
-const int BACKWARD_PIN = 3;
-const int SPEED_PIN = 4;
+const int DEPTH_FORWARD_PIN = 2;
+const int DEPTH_BACKWARD_PIN = 3;
+const int DEPTH_SPEED_PIN = 4;
 const int DEPTH_ENCODER_A_PIN = 18;
 const int DEPTH_ENCODER_B_PIN = 19;
 
-const int DEPTH_ENCODER_LIMIT = 1000;
+const int DEPTH_ENCODER_LIMIT = 1150;
 const int DEPTH_MOTOR_SPEED = 230;
 
 int count = 0;
@@ -34,9 +34,9 @@ void setup()   {
     Serial.println("RF failed");
   }
 
-   pinMode(FORWARD_PIN, OUTPUT);
-   pinMode(BACKWARD_PIN, OUTPUT);
-   pinMode(SPEED_PIN, OUTPUT);
+   pinMode(DEPTH_FORWARD_PIN, OUTPUT);
+   pinMode(DEPTH_BACKWARD_PIN, OUTPUT);
+   pinMode(DEPTH_SPEED_PIN, OUTPUT);
 
    pinMode(DEPTH_ENCODER_A_PIN, INPUT);
    pinMode(DEPTH_ENCODER_B_PIN, INPUT);
@@ -88,42 +88,35 @@ void loop()
     //Serial.print((String)count + " - Recebido: " );
 
     ControlMessage received_command = ControlMessage(message[0]);
+    Serial.println(current_depth_encoder_position);
     //received_command.print_binary();
 
-    analogWrite(SPEED_PIN, DEPTH_MOTOR_SPEED);
-    if(received_command.get_command(ControlMessage::FORWARD))
+    analogWrite(DEPTH_SPEED_PIN, DEPTH_MOTOR_SPEED);
+    if(received_command.get_command(ControlMessage::UP) && current_depth_encoder_position < DEPTH_ENCODER_LIMIT)
     {
-        //Serial.println("RX: FORWARD");
-        if(current_depth_encoder_position < DEPTH_ENCODER_LIMIT)
-        {
-            digitalWrite(FORWARD_PIN, HIGH);
-            digitalWrite(BACKWARD_PIN, LOW);
-        }
+        Serial.println("RX: UP");
+        digitalWrite(DEPTH_FORWARD_PIN, HIGH);
+        digitalWrite(DEPTH_BACKWARD_PIN, LOW);
     }
-    else if(received_command.get_command(ControlMessage::BACKWARD))
+    else if(received_command.get_command(ControlMessage::DOWN) && current_depth_encoder_position > -DEPTH_ENCODER_LIMIT )
     {
-        //Serial.println("RX: BACKWARD");
-        if(current_depth_encoder_position >= -DEPTH_ENCODER_LIMIT)
-        {
-            digitalWrite(FORWARD_PIN, LOW);
-            digitalWrite(BACKWARD_PIN, HIGH);
-            analogWrite(SPEED_PIN, power);
-
-        }
+        Serial.println("RX: DOWN");
+        digitalWrite(DEPTH_FORWARD_PIN, LOW);
+        digitalWrite(DEPTH_BACKWARD_PIN, HIGH);
     }
     else
     {
-        digitalWrite(FORWARD_PIN, LOW);
-        digitalWrite(BACKWARD_PIN, LOW);
+        digitalWrite(DEPTH_FORWARD_PIN, LOW);
+        digitalWrite(DEPTH_BACKWARD_PIN, LOW);
     }
     if(received_command.get_command(ControlMessage::LEFT))
       Serial.println("RX: LEFT");
     if(received_command.get_command(ControlMessage::RIGHT))
+    {
       Serial.println("RX: RIGHT");
-    if(received_command.get_command(ControlMessage::DOWN))
-      Serial.println("RX: DOWN");
-    if(received_command.get_command(ControlMessage::UP))
-      Serial.println("RX: UP");
+      current_depth_encoder_position = 0;
+    }
+    if(received_command.get_command(ControlMessage::FORWARD))
+      Serial.println("RX: FORWARD");
   }
 }
-
