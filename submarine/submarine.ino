@@ -17,7 +17,7 @@ const int DEPTH_SPEED_PIN = 4;
 const int DEPTH_ENCODER_A_PIN = 18;
 const int DEPTH_ENCODER_B_PIN = 19;
 
-const int DEPTH_ENCODER_LIMIT = 1150;
+const int DEPTH_ENCODER_LIMIT = 2300;
 const int DEPTH_MOTOR_SPEED = 230;
 
 int count = 0;
@@ -92,7 +92,7 @@ void loop()
     //received_command.print_binary();
 
     analogWrite(DEPTH_SPEED_PIN, DEPTH_MOTOR_SPEED);
-    if(received_command.get_command(ControlMessage::UP) && current_depth_encoder_position < DEPTH_ENCODER_LIMIT)
+    if(received_command.get_command(ControlMessage::UP))
     {
         Serial.println("RX: UP");
         digitalWrite(DEPTH_FORWARD_PIN, HIGH);
@@ -106,17 +106,22 @@ void loop()
     }
     else
     {
-        digitalWrite(DEPTH_FORWARD_PIN, LOW);
-        digitalWrite(DEPTH_BACKWARD_PIN, LOW);
+        digitalWrite(DEPTH_FORWARD_PIN, HIGH);
+        digitalWrite(DEPTH_BACKWARD_PIN, HIGH);
     }
     if(received_command.get_command(ControlMessage::LEFT))
       Serial.println("RX: LEFT");
     if(received_command.get_command(ControlMessage::RIGHT))
     {
       Serial.println("RX: RIGHT");
-      current_depth_encoder_position = 0;
     }
     if(received_command.get_command(ControlMessage::FORWARD))
       Serial.println("RX: FORWARD");
+
+    if(received_command.get_command(ControlMessage::BACKWARD))
+    {
+      Serial.println("RX: ENCODER RESET");
+      current_depth_encoder_position = 0;
+    }
   }
 }
