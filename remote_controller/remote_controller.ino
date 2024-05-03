@@ -83,7 +83,4 @@ void send (uint8_t* message, const size_t size)
 {
   const uint8_t aproved = driver.send(message, 1);
   tx_count += 1;
-  // Serial.print(tx_count);
-  // Serial.print(" - Approved: ");
-  // Serial.println(aproved);
 }
