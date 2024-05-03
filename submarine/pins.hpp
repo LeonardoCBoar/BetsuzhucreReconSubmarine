@@ -14,8 +14,9 @@ const int THRUST_SPEED_PIN = 6;
 const int THRUST_FORWARD_PIN = 8;
 const int THRUST_BACKWARD_PIN = 9;
 
+const int MIN_TURN_MOTOR_SPEED = 190;
 const int TURN_MOTOR_SPEED = 255;
+const int TURN_MOTOR_STEP = 10;
 const int TURN_SPEED_PIN = 5;
 const int TURN_RIGHT_PIN = 11;
 const int TURN_LEFT_PIN = 12;
-

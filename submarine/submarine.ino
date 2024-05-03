@@ -9,6 +9,8 @@
 const int MESSAGE_BUFFER_SIZE = 40;
 
 const int DEPTH_ENCODER_LIMIT = 2300;
+int target_thrust_motor_speed = 0;
+int current_thrust_motor_speed = 0;
 
 int count = 0;
 RH_ASK driver{2000, RX_PIN, 0};
@@ -87,10 +89,13 @@ void loop()
     ControlMessage received_command = ControlMessage(message[0]);
     //Serial.println(current_depth_encoder_position);
     //received_command.print_binary();
+    Serial.print("current: ");
+    Serial.print(current_thrust_motor_speed);
+    Serial.print(",target: ");
+    Serial.println(target_thrust_motor_speed);
 
     analogWrite(DEPTH_SPEED_PIN, DEPTH_MOTOR_SPEED);
     analogWrite(THRUST_SPEED_PIN, THRUST_MOTOR_SPEED);
-    analogWrite(TURN_SPEED_PIN, TURN_MOTOR_SPEED);
     if(received_command.get_command(ControlMessage::UP))
     {
         Serial.println("RX: UP");
@@ -111,21 +116,18 @@ void loop()
 
     if(received_command.get_command(ControlMessage::LEFT))
     {
-      Serial.println("RX: LEFT");
-      digitalWrite(TURN_RIGHT_PIN, HIGH);
-      digitalWrite(TURN_LEFT_PIN, LOW);
+      target_thrust_motor_speed = TURN_MOTOR_SPEED;
+      //Serial.println("RX: LEFT");
     }
     else if(received_command.get_command(ControlMessage::RIGHT))
     {
-      Serial.println("RX: RIGHT");
-      digitalWrite(TURN_RIGHT_PIN, LOW);
-      digitalWrite(TURN_LEFT_PIN, HIGH);
+      //Serial.println("RX: RIGHT");
+      target_thrust_motor_speed = -TURN_MOTOR_SPEED;
     }
     else
     {
-      Serial.println("RX: STOP");
-      digitalWrite(TURN_RIGHT_PIN, LOW);
-      digitalWrite(TURN_LEFT_PIN, LOW);
+      //Serial.println("RX: STOP");
+      target_thrust_motor_speed = 0;
     }
     
     if(received_command.get_command(ControlMessage::FORWARD))
@@ -145,5 +147,50 @@ void loop()
       Serial.println("RX: ENCODER RESET");
       current_depth_encoder_position = 0;
     }
+   
   }
+
+    if(current_thrust_motor_speed <  target_thrust_motor_speed)
+    {
+      current_thrust_motor_speed += TURN_MOTOR_STEP;
+    }
+    else if(current_thrust_motor_speed > target_thrust_motor_speed)
+    {
+      current_thrust_motor_speed -= TURN_MOTOR_STEP;
+    }
+
+
+    if(target_thrust_motor_speed > 0 && current_thrust_motor_speed >= 0 && current_thrust_motor_speed < MIN_TURN_MOTOR_SPEED)
+    {
+      current_thrust_motor_speed =  MIN_TURN_MOTOR_SPEED;
+    }
+
+    else if(target_thrust_motor_speed < 0 && current_thrust_motor_speed < 0 && current_thrust_motor_speed > -MIN_TURN_MOTOR_SPEED)
+    {
+      current_thrust_motor_speed = - MIN_TURN_MOTOR_SPEED;
+    }
+
+    if( abs(current_thrust_motor_speed) < MIN_TURN_MOTOR_SPEED)
+    {
+      current_thrust_motor_speed = 0;
+    }
+
+    
+    analogWrite(TURN_SPEED_PIN, min(abs(current_thrust_motor_speed), TURN_MOTOR_SPEED));
+    
+    if(current_thrust_motor_speed < 0)
+    {
+      digitalWrite(TURN_RIGHT_PIN, LOW);
+      digitalWrite(TURN_LEFT_PIN, HIGH);   
+    }
+    else if(current_thrust_motor_speed > 0)
+    {
+      digitalWrite(TURN_RIGHT_PIN, HIGH);
+      digitalWrite(TURN_LEFT_PIN, LOW);
+    }
+    else 
+    {
+      digitalWrite(TURN_RIGHT_PIN, LOW);
+      digitalWrite(TURN_LEFT_PIN, LOW);
+    }
 }
