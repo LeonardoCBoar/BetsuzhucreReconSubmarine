@@ -3,22 +3,12 @@
 #include <util/atomic.h>
 
 #include "messages.hpp"
-#include "motor_controller.hpp"
+#include "pins.hpp"
 
  
 const int MESSAGE_BUFFER_SIZE = 40;
 
-const int RX_PIN = 7;
-const int LED = 13;
-
-const int DEPTH_FORWARD_PIN = 2;
-const int DEPTH_BACKWARD_PIN = 3;
-const int DEPTH_SPEED_PIN = 4;
-const int DEPTH_ENCODER_A_PIN = 18;
-const int DEPTH_ENCODER_B_PIN = 19;
-
 const int DEPTH_ENCODER_LIMIT = 2300;
-const int DEPTH_MOTOR_SPEED = 230;
 
 int count = 0;
 RH_ASK driver{2000, RX_PIN, 0};
@@ -33,6 +23,13 @@ void setup()   {
   {
     Serial.println("RF failed");
   }
+   pinMode(THRUST_SPEED_PIN, OUTPUT);
+   pinMode(THRUST_BACKWARD_PIN, OUTPUT);
+   pinMode(THRUST_FORWARD_PIN, OUTPUT);
+
+   pinMode(TURN_SPEED_PIN, OUTPUT);
+   pinMode(TURN_RIGHT_PIN, OUTPUT);
+   pinMode(TURN_LEFT_PIN, OUTPUT);
 
    pinMode(DEPTH_FORWARD_PIN, OUTPUT);
    pinMode(DEPTH_BACKWARD_PIN, OUTPUT);
@@ -88,10 +85,12 @@ void loop()
     //Serial.print((String)count + " - Recebido: " );
 
     ControlMessage received_command = ControlMessage(message[0]);
-    Serial.println(current_depth_encoder_position);
+    //Serial.println(current_depth_encoder_position);
     //received_command.print_binary();
 
     analogWrite(DEPTH_SPEED_PIN, DEPTH_MOTOR_SPEED);
+    analogWrite(THRUST_SPEED_PIN, THRUST_MOTOR_SPEED);
+    analogWrite(TURN_SPEED_PIN, TURN_MOTOR_SPEED);
     if(received_command.get_command(ControlMessage::UP))
     {
         Serial.println("RX: UP");
@@ -109,14 +108,37 @@ void loop()
         digitalWrite(DEPTH_FORWARD_PIN, HIGH);
         digitalWrite(DEPTH_BACKWARD_PIN, HIGH);
     }
+
     if(received_command.get_command(ControlMessage::LEFT))
+    {
       Serial.println("RX: LEFT");
-    if(received_command.get_command(ControlMessage::RIGHT))
+      digitalWrite(TURN_RIGHT_PIN, HIGH);
+      digitalWrite(TURN_LEFT_PIN, LOW);
+    }
+    else if(received_command.get_command(ControlMessage::RIGHT))
     {
       Serial.println("RX: RIGHT");
+      digitalWrite(TURN_RIGHT_PIN, LOW);
+      digitalWrite(TURN_LEFT_PIN, HIGH);
     }
+    else
+    {
+      Serial.println("RX: STOP");
+      digitalWrite(TURN_RIGHT_PIN, LOW);
+      digitalWrite(TURN_LEFT_PIN, LOW);
+    }
+    
     if(received_command.get_command(ControlMessage::FORWARD))
+    {
       Serial.println("RX: FORWARD");
+      digitalWrite(THRUST_FORWARD_PIN, HIGH);
+      digitalWrite(THRUST_BACKWARD_PIN, LOW);
+    }
+    else 
+    {
+      digitalWrite(THRUST_FORWARD_PIN, LOW);
+      digitalWrite(THRUST_BACKWARD_PIN, LOW);
+    }
 
     if(received_command.get_command(ControlMessage::BACKWARD))
     {
